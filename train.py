@@ -40,6 +40,7 @@ from tqdm import tqdm
 from torch.autograd import Variable
 from tensorboardX import SummaryWriter
 import os
+import time
 
 writer = SummaryWriter('logs')
 loss_function = nn.MSELoss()
@@ -88,18 +89,22 @@ def train(args, device, train_loader, traintest_loader, test_loader):
 
         for epoch in range(start_epoch, args.epochs + 1):
             # Training
-            train_epoch(args, model, device, train_loader, optimizer, loss)
-
+            # print(epoch)
+            train_epoch(args, model, device, train_loader, optimizer, loss, epoch)
+            # now_time[0] = int(round(time.time() * 1000))
+            # if now_time[0] - start_time[0] > 2000:
+            #     print('FINIST')
+            #     break
             # Compute accuracy on training and testing set
-            print("\nSummary of epoch %d:" % (epoch))
-            test_epoch(args, model, device, traintest_loader, loss, 'Train',epoch)
-            test_epoch(args, model, device, test_loader, loss, 'Test',epoch)
-            if args.cont==True:
-                state = {'model': model.state_dict(), 'optimizer': optimizer.state_dict(), 'epoch': epoch}
-                torch.save(state, './model.pth')
+            # print("\nSummary of epoch %d:" % (epoch))
+            # test_epoch(args, model, device, traintest_loader, loss, 'Train',epoch)
+            # test_epoch(args, model, device, test_loader, loss, 'Test',epoch)
+            # if args.cont==True:
+            #     state = {'model': model.state_dict(), 'optimizer': optimizer.state_dict(), 'epoch': epoch}
+            #     torch.save(state, './model.pth')
 
 
-def train_epoch(args, model, device, train_loader, optimizer, loss):
+def train_epoch(args, model, device, train_loader, optimizer, loss, epoch):
     model.train()
 
     if args.freeze_conv_layers:
@@ -108,14 +113,14 @@ def train_epoch(args, model, device, train_loader, optimizer, loss):
                 param.requires_grad = False
 
     for batch_idx, (data, label) in enumerate(tqdm(train_loader)):
-        data, label = data.unsqueeze(1).to(device), label.squeeze(1).to(device)
+        data, label = data.to(device), label.to(device)
         if args.regression:
             targets = label
         else:
             targets = torch.zeros(label.shape[0], args.label_features, device=device).scatter_(1, label.unsqueeze(1).long(), 1.0)
 
         optimizer.zero_grad()
-        output = model(data, targets)
+        output = model(data, targets, epoch)
         # loss_val = loss_function(output, targets)
         loss_val = loss[0](output, loss[1](targets))
         loss_val.backward(retain_graph = True)
@@ -137,7 +142,7 @@ def test_epoch(args, model, device, test_loader, loss, phase,epoch):
 
     with torch.no_grad():
         for data, label in test_loader:
-            data, label = data.unsqueeze(1).to(device), label.squeeze(1).to(device)
+            data, label = data.to(device), label.to(device)
             if args.regression:
                 targets = label
             else:
