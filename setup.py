@@ -275,13 +275,13 @@ class Tidigits(Dataset):
         super(Tidigits, self).__init__()
         self.n_bands = n_bands
         self.n_frames = n_frames
-        dataname = '../DRTP-Thomas/DATASETS/tidigits/packed_tidigits_nbands_'+str(n_bands)+'_nframes_' + str(n_frames)+'.pkl'
+        dataname = './DATASETS/tidigits/packed_tidigits_nbands_'+str(n_bands)+'_nframes_' + str(n_frames)+'.pkl'
         if os.path.exists(dataname):
             with open(dataname,'rb') as fr:
                 [train_set, val_set, test_set] = pickle.load(fr)
         else:
             print('Tidigits Dataset Has not been Processed, now do it.')
-            train_set, val_set, test_set = read_data(path='../DRTP-Thomas/DATASETS/tidigits/isolated_digits_tidigits', n_bands=n_bands, n_frames=n_frames)#(2900, 1640) (2900,)
+            train_set, val_set, test_set = read_data(path='./DATASETS/tidigits/isolated_digits_tidigits', n_bands=n_bands, n_frames=n_frames)#(2900, 1640) (2900,)
             with open(dataname,'wb') as fw:
                 pickle.dump([train_set, val_set, test_set],fw)
         if train_or_test == 'train':
@@ -321,9 +321,9 @@ class Gesture(Dataset):
 
     def __getitem__(self, index):
         sample = self.x_values[index, :, :]
-        sample = torch.reshape(torch.tensor(sample), (sample.shape[0], 32, 32))
+        sample = torch.reshape(torch.tensor(sample), (sample.shape[0], 32, 32)).unsqueeze(0)
         label = self.y_values[index].astype(np.float32)
-        label = torch.topk(torch.tensor(label), 1)[1]
+        label = torch.topk(torch.tensor(label), 1)[1].squeeze(0)
         return sample, label
 
     def __len__(self):
